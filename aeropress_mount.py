@@ -15,15 +15,32 @@ base_thickness = 3
 
 @dataclass
 class AeropressMeasurements():
-     chamber_od: float = 10
+     chamber_od: float = 63.45
+     octagon_width = 97.05
+     chamber_to_octagon = 16.45
+
+     @property
+     def chamber_radius(self):
+          return self.chamber_od/2
+
 
 ap = AeropressMeasurements()
 
-hanger_thickness = 3
-inner_hanger_profile = cq.Sketch().circle(ap.chamber_od/2).push([(0,ap.chamber_od/2,0)]).rect(ap.chamber_od,ap.chamber_od)
-outer_hanger_profile = cq.Sketch().circle(ap.chamber_od/2+hanger_thickness)
+hanger_thickness = 10
+hanger_depth = ap.octagon_width
 
-hanger = cq.Workplane("XY").placeSketch(outer_hanger_profile).extrude(1).faces(">Z").placeSketch(inner_hanger_profile).cutThruAll()
+outer_hanger_profile = cq.Sketch().circle(ap.chamber_od/2+hanger_thickness).push(
+    [(0, -hanger_depth/2, 0)]).rect(ap.chamber_od + hanger_thickness * 2, hanger_depth)
+hanger_sketch = outer_hanger_profile.reset().circle(ap.chamber_radius, mode='s').push(
+    [(0, -hanger_depth/2, 0)]).rect(ap.chamber_od, hanger_depth, mode='s')
+
+# round the ends
+endpoints = [(ap.chamber_radius+hanger_thickness/2, -hanger_depth, 0),(-(ap.chamber_radius+hanger_thickness/2), -hanger_depth, 0)]
+hanger_sketch = hanger_sketch.push(endpoints).circle(hanger_thickness/2)
+hanger = cq.Workplane("XY").placeSketch(hanger_sketch).extrude(10).faces(">Z").workplane().pushPoints(endpoints).sphere(hanger_thickness/2)
+
+
+
 
 
 
@@ -31,4 +48,3 @@ hanger = cq.Workplane("XY").placeSketch(outer_hanger_profile).extrude(1).faces("
 #                   .circle()
 # )
 
-# hanger = cq.Workplane("XY").placeSketch(inner_hanger_profile).extrude(20)
